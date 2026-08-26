@@ -11,7 +11,15 @@
       "localizedDescription": "A trimmed derivative of the upstream Apollo Reborn GLASS IPA. It keeps Open in Apollo for Safari and the Open in Apollo share-sheet action, while removing widgets, intents, notification extensions, and the legacy Safari fallback.",
       "iconURL": "https://raw.githubusercontent.com/Apollo-Reborn/Apollo-Reborn/main/docs/assets/icon.png",
       "tintColor": "ff4500",
-      "versions": []
+      "versions": [
+        {
+          "version": "3.6.0",
+          "date": "2026-08-18T21:35:49Z",
+          "localizedDescription": "GLASS build retaining only Open in Apollo for Safari and the share sheet.",
+          "downloadURL": "https://github.com/eiznem/apollo-reborn-trimmed/releases/download/trimmed-v1.15.11_3.6.0/Apollo-Reborn-3.6.0-GLASS-SAFARI-SHARE.ipa",
+          "size": 113430711
+        }
+      ]
     }
   ],
   "news": []
