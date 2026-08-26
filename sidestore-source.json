@@ -1,0 +1,18 @@
+{
+  "name": "Trimmed Apollo Reborn",
+  "identifier": "com.eiznem.apollo-reborn-trimmed",
+  "sourceURL": "https://raw.githubusercontent.com/eiznem/apollo-reborn-trimmed/main/sidestore-source.json",
+  "apps": [
+    {
+      "name": "Apollo Reborn GLASS (Safari + Share)",
+      "bundleIdentifier": "com.christianselig.Apollo",
+      "developerName": "Apollo Reborn contributors",
+      "subtitle": "Apollo Reborn GLASS with only the Safari and share-sheet extensions",
+      "localizedDescription": "A trimmed derivative of the upstream Apollo Reborn GLASS IPA. It keeps Open in Apollo for Safari and the Open in Apollo share-sheet action, while removing widgets, intents, notification extensions, and the legacy Safari fallback.",
+      "iconURL": "https://raw.githubusercontent.com/Apollo-Reborn/Apollo-Reborn/main/docs/assets/icon.png",
+      "tintColor": "ff4500",
+      "versions": []
+    }
+  ],
+  "news": []
+}
