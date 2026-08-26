@@ -1,0 +1,110 @@
+name: Publish trimmed Apollo Reborn GLASS
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 9 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-trimmed-apollo-glass
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find latest upstream stable GLASS build
+        id: upstream
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          release=$(gh api repos/Apollo-Reborn/Apollo-Reborn/releases/latest)
+          tag=$(jq -r '.tag_name' <<<"$release")
+          version=${tag##*_}
+          asset=$(jq -r '.assets[] | select(.name | test("-GLASS\\.ipa$")) | .browser_download_url' <<<"$release")
+          published=$(jq -r '.published_at' <<<"$release")
+          if [[ -z "$asset" || "$asset" == null ]]; then
+            echo "Latest upstream release has no full GLASS IPA." >&2
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+          echo "published=$published" >> "$GITHUB_OUTPUT"
+
+      - name: Stop if this upstream release is already published
+        id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: trimmed-${{ steps.upstream.outputs.tag }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download and trim IPA
+        if: steps.existing.outputs.exists == 'false'
+        env:
+          UPSTREAM_ASSET: ${{ steps.upstream.outputs.asset }}
+          VERSION: ${{ steps.upstream.outputs.version }}
+        run: |
+          curl --fail --location --retry 3 "$UPSTREAM_ASSET" --output upstream.ipa
+          chmod +x scripts/trim-ipa.sh
+          scripts/trim-ipa.sh upstream.ipa "Apollo-Reborn-${VERSION}-GLASS-SAFARI-SHARE.ipa"
+
+      - name: Verify trimmed IPA
+        if: steps.existing.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.upstream.outputs.version }}
+        run: |
+          set -euo pipefail
+          ipa="Apollo-Reborn-${VERSION}-GLASS-SAFARI-SHARE.ipa"
+          count=$(unzip -l "$ipa" | awk '/\.appex\/Info.plist$/ {count++} END {print count+0}')
+          test "$count" -eq 2
+          unzip -tq "$ipa"
+
+      - name: Publish release
+        if: steps.existing.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.upstream.outputs.version }}
+          UPSTREAM_TAG: ${{ steps.upstream.outputs.tag }}
+          RELEASE_TAG: trimmed-${{ steps.upstream.outputs.tag }}
+        run: |
+          asset="Apollo-Reborn-${VERSION}-GLASS-SAFARI-SHARE.ipa"
+          gh release create "$RELEASE_TAG" "$asset" \
+            --title "Apollo Reborn ${VERSION} GLASS — Safari + Share" \
+            --notes "Automated derivative of Apollo-Reborn/Apollo-Reborn ${UPSTREAM_TAG}. Keeps only Open in Apollo (Safari manual fallback) and the Open in Apollo share-sheet action. All widget, intent, notification, and legacy Safari extensions are removed. Install and sign with SideStore."
+
+      - name: Update SideStore source
+        if: steps.existing.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.upstream.outputs.version }}
+          UPSTREAM_TAG: ${{ steps.upstream.outputs.tag }}
+          PUBLISHED_AT: ${{ steps.upstream.outputs.published }}
+        run: |
+          set -euo pipefail
+          asset="Apollo-Reborn-${VERSION}-GLASS-SAFARI-SHARE.ipa"
+          size=$(stat -f%z "$asset")
+          download_url="https://github.com/${GITHUB_REPOSITORY}/releases/download/trimmed-${UPSTREAM_TAG}/${asset}"
+          jq \
+            --arg version "$VERSION" \
+            --arg date "$PUBLISHED_AT" \
+            --arg url "$download_url" \
+            --argjson size "$size" \
+            '.apps[0].versions = [{version: $version, date: $date, localizedDescription: "GLASS build retaining only Open in Apollo for Safari and the share sheet.", downloadURL: $url, size: $size}]' \
+            sidestore-source.json > sidestore-source.json.tmp
+          mv sidestore-source.json.tmp sidestore-source.json
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add sidestore-source.json
+          git commit -m "Update SideStore source for Apollo Reborn ${VERSION}"
+          git push
