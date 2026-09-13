@@ -13,11 +13,11 @@
       "tintColor": "ff4500",
       "versions": [
         {
-          "version": "3.7.0",
-          "date": "2026-09-11T01:34:25Z",
+          "version": "3.7.1",
+          "date": "2026-09-13T03:24:58Z",
           "localizedDescription": "GLASS build retaining only Open in Apollo for Safari and the share sheet.",
-          "downloadURL": "https://github.com/eiznem/apollo-reborn-trimmed/releases/download/trimmed-v1.15.11_3.7.0/Apollo-Reborn-3.7.0-GLASS-SAFARI-SHARE.ipa",
-          "size": 114739715
+          "downloadURL": "https://github.com/eiznem/apollo-reborn-trimmed/releases/download/trimmed-v1.15.11_3.7.1/Apollo-Reborn-3.7.1-GLASS-SAFARI-SHARE.ipa",
+          "size": 114765783
         }
       ]
     }
